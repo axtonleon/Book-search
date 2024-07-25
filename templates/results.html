@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search Results</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #e0f7fa; /* Light blue background */
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        text-align: center;
+        color: #01579b; /* Dark blue */
+        margin-top: 20px;
+        border-bottom: 3px solid #ff7043; /* Medium blue */
+        display: inline-block;
+        padding-bottom: 10px;
+      }
+      .search-container {
+        text-align: center;
+        margin: 20px 0;
+      }
+      .search-container form {
+        display: inline-block;
+        background-color: #ffffff;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .search-container input[type="text"] {
+        padding: 10px;
+        width: 300px;
+        border: 1px solid #b3e5fc; /* Light blue border */
+        border-radius: 5px;
+        margin-right: 10px;
+      }
+      .search-container input[type="submit"] {
+        padding: 10px 20px;
+        background-color: #ff7043; /* Medium blue */
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .search-container input[type="submit"]:hover {
+        background-color: #e64a19; /* Darker blue */
+      }
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-gap: 20px;
+        padding: 20px;
+      }
+      .book-card {
+        border: 1px solid #b3e5fc; /* Light blue border */
+        padding: 15px;
+        text-align: center;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+      }
+      .book-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+        background-color: #e1f5fe; /* Very light blue */
+      }
+      .book-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #01579b; /* Dark blue */
+      }
+      .book-author {
+        font-size: 14px;
+        color: #ff7043; /* Medium blue */
+        margin-bottom: 5px;
+      }
+      .book-description {
+        font-size: 12px;
+        color: #0277bd; /* Medium blue */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        margin-bottom: 10px;
+      }
+      .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+      }
+      .pagination a {
+        margin: 0 5px;
+        padding: 10px 15px;
+        border: 1px solid #b3e5fc; /* Light blue border */
+        text-decoration: none;
+        color: #0277bd; /* Medium blue */
+        border-radius: 5px;
+        transition: background-color 0.3s, color 0.3s;
+      }
+      .pagination a.active {
+        background-color: #0288d1; /* Medium blue */
+        color: white;
+        border-color: #0288d1;
+      }
+      .pagination a:hover:not(.active) {
+        background-color: #ff7043; /* Light blue */
+      }
+      .home-button {
+        text-align: center;
+        margin: 20px;
+      }
+      .home-button a {
+        display: inline-block;
+        padding: 10px 20px;
+        font-size: 16px;
+        color: white;
+        background-color: #0277bd; /* Medium blue */
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+      }
+      .home-button a:hover {
+        background-color: #01579b; /* Darker blue */
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+        padding-top: 60px;
+      }
+      .modal-content {
+        background-color: #ffffff;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #b3e5fc; /* Light blue border */
+        width: 80%;
+        border-radius: 10px;
+        border-top: 5px solid #0288d1; /* Medium blue accent */
+      }
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+      .close:hover,
+      .close:focus {
+        color: #0288d1; /* Medium blue */
+        text-decoration: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Search Results</h1>
+    <div class="search-container">
+      <form action="/results" method="post">
+        <label for="search">Search for a book:</label><br />
+        <input
+          type="text"
+          id="search"
+          name="search"
+          value="{{ request.form.search }}"
+        /><br /><br />
+        <input type="submit" value="Search" />
+      </form>
+    </div>
+    <div class="grid-container">
+      {% for index, row in results.iterrows() %}
+      <div class="book-card" onclick="openModal('{{ index }}')">
+        <h3 class="book-title">{{ row['Title'] }}</h3>
+        <p class="book-author">{{ row['Authors'] }}</p>
+        <p class="book-description">{{ row['Description'] }}</p>
+        <p>Category: {{ row['Category'] }}</p>
+        <p>Publisher: {{ row['Publisher'] }}</p>
+        <p>Price Starting With ($): {{ row['Price Starting With ($)'] }}</p>
+        <p>
+          Publish Date: {{ row['Publish Date (Month)'] }} {{ row['Publish Date
+          (Year)'] }}
+        </p>
+      </div>
+      <div id="modal-{{ index }}" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeModal('{{ index }}')">&times;</span>
+          <h2>{{ row['Title'] }}</h2>
+          <p><strong>Author:</strong> {{ row['Authors'] }}</p>
+          <p><strong>Description:</strong> {{ row['Description'] }}</p>
+          <p><strong>Category:</strong> {{ row['Category'] }}</p>
+          <p><strong>Publisher:</strong> {{ row['Publisher'] }}</p>
+          <p>
+            <strong>Price Starting With ($):</strong> {{ row['Price Starting
+            With ($)'] }}
+          </p>
+          <p>
+            <strong>Publish Date:</strong> {{ row['Publish Date (Month)'] }} {{
+            row['Publish Date (Year)'] }}
+          </p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="home-button">
+      <a href="/">Back to Home</a>
+    </div>
+    <script>
+      function openModal(id) {
+        document.getElementById("modal-" + id).style.display = "block";
+      }
+
+      function closeModal(id) {
+        document.getElementById("modal-" + id).style.display = "none";
+      }
+
+      window.onclick = function (event) {
+        var modals = document.getElementsByClassName("modal");
+        for (var i = 0; i < modals.length; i++) {
+          if (event.target == modals[i]) {
+            modals[i].style.display = "none";
+          }
+        }
+      };
+    </script>
+  </body>
+</html>
