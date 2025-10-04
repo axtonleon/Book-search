@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request
+import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 import pandas as pd
@@ -26,10 +27,21 @@ def preprocess_query(query):
 # Function to search books
 def search_books(query, top_n=20):
     query_vector = preprocess_query(query)
-    cosine_similarities = linear_kernel(query_vector, tfidf_matrix).flatten()
-    top_n_indices = np.argsort(cosine_similarities)[-top_n:]
+    cosine_similarities = linear_kernel(query_vector, tfidf_matrix).ravel()
 
-    results = df.iloc[top_n_indices][['Title', 'Authors', 'Description', 'Category', 'Publisher', 'Price Starting With ($)', 'Publish Date (Month)', 'Publish Date (Year)']]
+    num_documents = cosine_similarities.shape[0]
+    if num_documents == 0:
+        return df.iloc[[]][['Title', 'Authors', 'Description', 'Category', 'Publisher', 'Price Starting With ($)', 'Publish Date (Month)', 'Publish Date (Year)']]
+
+    # Cap top_n to available documents
+    top_n = min(top_n, num_documents)
+
+    # Efficiently select top N indices, then sort them by similarity desc
+    candidate_indices = np.argpartition(cosine_similarities, -top_n)[-top_n:]
+    sorted_top_indices = candidate_indices[np.argsort(cosine_similarities[candidate_indices])[::-1]]
+
+    columns_to_return = ['Title', 'Authors', 'Description', 'Category', 'Publisher', 'Price Starting With ($)', 'Publish Date (Month)', 'Publish Date (Year)']
+    results = df.iloc[sorted_top_indices][columns_to_return]
 
     return results
 
@@ -58,4 +70,7 @@ def utility_processor():
     return dict(max=max, min=min)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug_env = os.getenv('FLASK_DEBUG', '0').lower()
+    debug_enabled = debug_env in ('1', 'true', 'yes', 'y')
+    # Bind to all interfaces in container environments; keep debug off by default
+    app.run(host='0.0.0.0', debug=debug_enabled)
